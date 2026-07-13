@@ -767,7 +767,7 @@
               </div>
               <div class="form-grupo">
                 <label for="contacto-telefono">Teléfono (opcional)</label>
-                <input type="tel" id="contacto-telefono" name="telefono" placeholder="10 dígitos" autocomplete="tel">
+                <input type="tel" inputmode="numeric" pattern="[0-9]*" maxlength="10" oninput="this.value = this.value.replace(/[^0-9]/g, '')" id="contacto-telefono" name="telefono" placeholder="10 dígitos numéricos" autocomplete="tel">
               </div>
             </div>
             <div class="form-grupo">

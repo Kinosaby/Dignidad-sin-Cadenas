@@ -2202,14 +2202,17 @@ footer {
 }
 
 .checkbox-label input[type="checkbox"] {
-  width: 16px;
-  height: 16px;
-  min-width: 16px;
-  border: 2px solid var(--gris-medio);
+  appearance: auto !important;
+  -webkit-appearance: auto !important;
+  width: 18px;
+  height: 18px;
+  min-width: 18px;
+  border: 2px solid var(--dorado-oscuro);
   border-radius: 4px;
-  accent-color: var(--dorado-medio);
+  accent-color: var(--dorado-oscuro);
   margin-top: 2px;
   padding: 0;
+  cursor: pointer;
 }
 
 .checkbox-label a {
