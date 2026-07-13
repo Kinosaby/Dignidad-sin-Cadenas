@@ -130,7 +130,15 @@ async function guardarContacto() {
   if (sb && SUPABASE_URL !== 'TU_SUPABASE_URL') {
     try {
       const { error } = await sb.from('contactos').insert([datos]);
-      if (error) console.warn('No se pudo guardar el mensaje:', error.message);
+      if (error) {
+        console.error('Error de Supabase al guardar mensaje:', error);
+        alert('⚠️ Supabase no permitió guardar el mensaje:\n\n' + error.message + '\n\n👉 Para solucionarlo: entra a Supabase → SQL Editor y corre:\nCREATE POLICY "Permitir enviar contacto" ON contactos FOR INSERT TO anon WITH CHECK (true);');
+        if (btnEnviar) {
+          btnEnviar.disabled    = false;
+          btnEnviar.textContent = 'Enviar mensaje';
+        }
+        return;
+      }
     } catch (err) {
       console.warn('Error de conexión con Supabase:', err);
     }
