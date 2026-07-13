@@ -152,6 +152,7 @@ function validarFormulario() {
   const nombre     = document.getElementById('contacto-nombre');
   const correo     = document.getElementById('contacto-correo');
   const motivo     = document.getElementById('contacto-motivo');
+  const telefono   = document.getElementById('contacto-telefono');
   const mensaje    = document.getElementById('contacto-mensaje');
   const privacidad = document.getElementById('contacto-privacidad');
 
@@ -160,6 +161,9 @@ function validarFormulario() {
   }
   if (!correo?.value.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(correo.value)) {
     mostrarError('error-correo', 'Ingresa un correo electrónico válido.', correo); valido = false;
+  }
+  if (telefono?.value.trim() && telefono.value.trim().length !== 10) {
+    mostrarError('error-telefono', 'El teléfono debe tener exactamente 10 dígitos numéricos.', telefono); valido = false;
   }
   if (!motivo?.value) {
     mostrarError('error-motivo', 'Selecciona un motivo de contacto.', motivo); valido = false;
@@ -184,7 +188,7 @@ function limpiarErrores() {
   document.querySelectorAll('.invalido').forEach(el => el.classList.remove('invalido'));
 }
 
-['contacto-nombre', 'contacto-correo', 'contacto-motivo', 'contacto-mensaje'].forEach(id => {
+['contacto-nombre', 'contacto-correo', 'contacto-telefono', 'contacto-motivo', 'contacto-mensaje'].forEach(id => {
   const el = document.getElementById(id);
   if (el) el.addEventListener('input', () => {
     el.classList.remove('invalido');
@@ -192,6 +196,14 @@ function limpiarErrores() {
     if (err) err.textContent = '';
   });
 });
+
+const cbPriv = document.getElementById('contacto-privacidad');
+if (cbPriv) {
+  cbPriv.addEventListener('change', () => {
+    const err = document.getElementById('error-privacidad');
+    if (err) err.textContent = '';
+  });
+}
 
 // ════════════════════════════════════════════════════════════════
 //  CONTENIDO DINÁMICO DESDE SUPABASE

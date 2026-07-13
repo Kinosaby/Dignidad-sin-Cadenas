@@ -2147,8 +2147,7 @@ footer {
   color: var(--dorado-oscuro);
 }
 
-.form-grupo input,
-.form-grupo select,
+.form-grupo input:not([type="checkbox"]),
 .form-grupo textarea {
   padding: 11px 14px;
   border: 1.5px solid var(--gris-medio);
@@ -2159,6 +2158,18 @@ footer {
   background: var(--blanco);
   transition: var(--transicion);
   appearance: none;
+}
+
+.form-grupo select {
+  padding: 11px 14px;
+  border: 1.5px solid var(--gris-medio);
+  border-radius: var(--radio);
+  font-family: Montserrat, sans-serif;
+  font-size: .88rem;
+  color: var(--azul);
+  background: var(--blanco);
+  transition: var(--transicion);
+  cursor: pointer;
 }
 
 .form-grupo input:focus,
