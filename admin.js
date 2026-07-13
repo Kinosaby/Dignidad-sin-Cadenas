@@ -60,29 +60,26 @@ async function iniciarSesion() {
   btnLogin.disabled    = true;
   loginError.textContent = '';
   
-  // 1. Acceso Maestro Directo (Garantía para que tú o tu cliente entren SIEMPRE al panel sin bloqueo)
-  const clavesMaestras = ['dignidad2026!', 'dignidad2026', 'admin123', 'admin', 'kinosaby'];
-  if (clavesMaestras.includes(pass.toLowerCase()) || email === 'raulcarrasco448@gmail.com') {
-    actualizarUI({ user: { email: email || 'admin@dignidadsincadenas.org' } });
-    btnLogin.textContent = 'Iniciar sesión';
-    btnLogin.disabled    = false;
-    return;
-  }
-
-  // 2. Autenticación con Supabase Auth
   try {
     const { data, error } = await supabase.auth.signInWithPassword({ email, password: pass });
     
     if (error) {
-      console.warn('Supabase Auth rechazó las credenciales, intentando acceso maestro...');
-      // Si falla Supabase pero la contraseña tiene al menos 4 caracteres, permitimos entrada administrativa
-      actualizarUI({ user: { email: email || 'admin@dignidadsincadenas.org' } });
+      console.error('Error al iniciar sesión:', error);
+      let mensaje = '❌ Correo o contraseña incorrectos.';
+      if (error.message.toLowerCase().includes('not confirmed')) {
+        mensaje = '⚠️ Tu correo no está confirmado en Supabase. Confírmalo en Authentication → Users.';
+      } else if (error.message.toLowerCase().includes('invalid login credentials')) {
+        mensaje = '❌ Credenciales inválidas. Verifica tu usuario y contraseña en Supabase.';
+      } else {
+        mensaje = `❌ Error: ${error.message}`;
+      }
+      loginError.textContent = mensaje;
     } else if (data && data.session) {
       actualizarUI(data.session);
     }
   } catch (err) {
     console.error('Excepción en iniciarSesion:', err);
-    actualizarUI({ user: { email: email || 'admin@dignidadsincadenas.org' } });
+    loginError.textContent = '❌ Error de red al conectar con Supabase.';
   } finally {
     btnLogin.textContent = 'Iniciar sesión';
     btnLogin.disabled    = false;
