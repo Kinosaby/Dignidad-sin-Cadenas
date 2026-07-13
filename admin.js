@@ -51,7 +51,11 @@ verificarSesion();
 async function iniciarSesion() {
   const email = emailInput.value.trim().toLowerCase();
   const pass  = passInput.value;
-  if (!email || !pass) { loginError.textContent = 'Completa ambos campos.'; return; }
+  if (!email || !pass) { 
+    loginError.textContent = 'Completa ambos campos.'; 
+    alert('Por favor escribe tu correo y contraseña.');
+    return; 
+  }
   
   btnLogin.textContent = 'Iniciando...';
   btnLogin.disabled    = true;
@@ -62,19 +66,24 @@ async function iniciarSesion() {
     
     if (error) {
       console.error('Error al iniciar sesión:', error);
+      let mensaje = '';
       if (error.message.toLowerCase().includes('not confirmed') || error.message.toLowerCase().includes('confirm')) {
-        loginError.textContent = '⚠️ Tu correo no está confirmado en Supabase. Ve a Authentication → Users y actívalo.';
+        mensaje = '⚠️ Tu correo no está confirmado en Supabase. Ve a Authentication → Users en Supabase y actívalo.';
       } else if (error.message.toLowerCase().includes('invalid login credentials')) {
-        loginError.textContent = '❌ Correo o contraseña incorrectos. Verifica tus credenciales.';
+        mensaje = '❌ Correo o contraseña incorrectos en Supabase.\n\nVerifica en Supabase → Authentication → Users que el usuario exista y esté confirmado (Confirmed).';
       } else {
-        loginError.textContent = `❌ Error: ${error.message}`;
+        mensaje = `❌ Error de Supabase: ${error.message}`;
       }
+      loginError.textContent = mensaje;
+      alert(mensaje);
     } else if (data && data.session) {
       actualizarUI(data.session);
     }
   } catch (err) {
     console.error('Excepción en iniciarSesion:', err);
-    loginError.textContent = `❌ Error de red o conexión: ${err.message || err}`;
+    const msg = `❌ Error de red o conexión: ${err.message || err}`;
+    loginError.textContent = msg;
+    alert(msg);
   } finally {
     btnLogin.textContent = 'Iniciar sesión';
     btnLogin.disabled    = false;
