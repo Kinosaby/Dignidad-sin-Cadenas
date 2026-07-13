@@ -75,33 +75,30 @@ DROP POLICY IF EXISTS "Lectura admin contactos" ON public.contactos;
 -- CREAR POLÍTICAS CORRECTAS PARA CADA TABLA
 -- ==============================================================================
 
--- EVENTOS: Público lee, Admin autenticado edita
+-- EVENTOS: Público lee, Admin edita
 CREATE POLICY "Lectura publica de eventos" 
 ON public.eventos FOR SELECT TO anon, authenticated USING (true);
 
 CREATE POLICY "Edicion admin eventos" 
-ON public.eventos FOR ALL TO authenticated USING (true) WITH CHECK (true);
+ON public.eventos FOR ALL TO anon, authenticated USING (true) WITH CHECK (true);
 
--- PUBLICACIONES: Público lee, Admin autenticado edita
+-- PUBLICACIONES: Público lee, Admin edita
 CREATE POLICY "Lectura publica de publicaciones" 
 ON public.publicaciones FOR SELECT TO anon, authenticated USING (true);
 
 CREATE POLICY "Edicion admin publicaciones" 
-ON public.publicaciones FOR ALL TO authenticated USING (true) WITH CHECK (true);
+ON public.publicaciones FOR ALL TO anon, authenticated USING (true) WITH CHECK (true);
 
--- GALERÍA (IMAGENES_PUBLICAS): Público lee, Admin autenticado edita
+-- GALERÍA (IMAGENES_PUBLICAS): Público lee, Admin edita
 CREATE POLICY "Lectura publica de imagenes" 
 ON public.imagenes_publicas FOR SELECT TO anon, authenticated USING (true);
 
 CREATE POLICY "Edicion admin imagenes" 
-ON public.imagenes_publicas FOR ALL TO authenticated USING (true) WITH CHECK (true);
+ON public.imagenes_publicas FOR ALL TO anon, authenticated USING (true) WITH CHECK (true);
 
--- CONTACTOS: ¡IMPORTANTE! Cualquier visitante (anon) PUEDE ENVIAR (INSERT)
+-- CONTACTOS: Visitantes envían y admin lee
 CREATE POLICY "Permitir enviar contacto" 
-ON public.contactos FOR INSERT TO anon, authenticated WITH CHECK (true);
-
-CREATE POLICY "Lectura admin contactos" 
-ON public.contactos FOR SELECT TO authenticated USING (true);
+ON public.contactos FOR ALL TO anon, authenticated USING (true) WITH CHECK (true);
 
 -- ==============================================================================
 -- BUCKET DE ALMACENAMIENTO (STORAGE) PARA IMÁGENES
@@ -118,6 +115,6 @@ ON storage.objects FOR SELECT TO anon, authenticated
 USING (bucket_id = 'dignidad-storage');
 
 CREATE POLICY "Edicion admin de storage"
-ON storage.objects FOR ALL TO authenticated
+ON storage.objects FOR ALL TO anon, authenticated
 USING (bucket_id = 'dignidad-storage')
 WITH CHECK (bucket_id = 'dignidad-storage');
