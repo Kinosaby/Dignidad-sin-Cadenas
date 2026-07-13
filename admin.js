@@ -752,3 +752,9 @@ if (btnGuardarConfig) {
   btnGuardarConfig.addEventListener('click', guardarConfiguracion);
 }
 
+// Bloquear fechas pasadas en el calendario de creación/edición de eventos
+const evFechaInput = document.getElementById('ev-fecha');
+if (evFechaInput) {
+  const hoy = new Date().toLocaleDateString('sv-SE');
+  evFechaInput.setAttribute('min', hoy);
+}
