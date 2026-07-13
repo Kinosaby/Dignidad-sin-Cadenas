@@ -65,15 +65,16 @@ async function iniciarSesion() {
     
     if (error) {
       console.error('Error al iniciar sesión:', error);
-      let mensaje = '❌ Correo o contraseña incorrectos.';
+      let mensaje = '❌ Correo o contraseña incorrectos en Supabase.';
       if (error.message.toLowerCase().includes('not confirmed')) {
-        mensaje = '⚠️ Tu correo no está confirmado en Supabase. Confírmalo en Authentication → Users.';
+        mensaje = '⚠️ Tu correo no está confirmado en Supabase. Ve a Supabase → Authentication → Users → ... → Confirm User.';
       } else if (error.message.toLowerCase().includes('invalid login credentials')) {
-        mensaje = '❌ Credenciales inválidas. Verifica tu usuario y contraseña en Supabase.';
+        mensaje = '❌ Contraseña o correo incorrectos en Supabase.\n\n👉 Para solucionarlo en 10 segundos:\nEntra a Supabase → Authentication → Users → haz clic en "..." al lado de tu correo → selecciona "Reset Password" y escribe tu contraseña.';
       } else {
         mensaje = `❌ Error: ${error.message}`;
       }
       loginError.textContent = mensaje;
+      alert(mensaje);
     } else if (data && data.session) {
       actualizarUI(data.session);
     }
