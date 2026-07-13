@@ -18,9 +18,9 @@ const loginError    = document.getElementById('login-error');
 const btnLogout     = document.getElementById('btn-logout');
 const userDisplay   = document.getElementById('user-email-display');
 
-let supabase = null;
+let sbAdmin = null;
 if (window.supabase && typeof window.supabase.createClient === 'function') {
-  supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  sbAdmin = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 }
 
 function mostrarErrorLogin(mensaje) {
@@ -35,9 +35,9 @@ function mostrarErrorLogin(mensaje) {
 
 // ── Autenticación ────────────────────────────────────────────────
 async function verificarSesion() {
-  if (!supabase) return;
+  if (!sbAdmin) return;
   try {
-    const { data: { session } } = await supabase.auth.getSession();
+    const { data: { session } } = await sbAdmin.auth.getSession();
     actualizarUI(session);
   } catch (e) {
     console.error('Error verificando sesión:', e);
@@ -59,8 +59,8 @@ function actualizarUI(session) {
   }
 }
 
-if (supabase) {
-  supabase.auth.onAuthStateChange((_event, session) => {
+if (sbAdmin) {
+  sbAdmin.auth.onAuthStateChange((_event, session) => {
     actualizarUI(session);
   });
   verificarSesion();
@@ -76,7 +76,7 @@ async function iniciarSesion() {
     return; 
   }
 
-  if (!supabase) {
+  if (!sbAdmin) {
     mostrarErrorLogin('❌ No se ha podido conectar a la librería de Supabase.');
     return;
   }
@@ -91,7 +91,7 @@ async function iniciarSesion() {
   }
   
   try {
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password: pass });
+    const { data, error } = await sbAdmin.auth.signInWithPassword({ email, password: pass });
     
     if (error) {
       console.error('Error al iniciar sesión:', error);
@@ -122,7 +122,7 @@ if (btnLogin) btnLogin.addEventListener('click', iniciarSesion);
 if (emailInput) emailInput.addEventListener('keydown', e => { if (e.key === 'Enter') iniciarSesion(); });
 if (passInput) passInput.addEventListener('keydown', e => { if (e.key === 'Enter') iniciarSesion(); });
 
-btnLogout.addEventListener('click', () => supabase.auth.signOut());
+btnLogout.addEventListener('click', () => sbAdmin.auth.signOut());
 
 // ── Tabs ─────────────────────────────────────────────────────────
 document.querySelectorAll('.adm-tab').forEach(tab => {
@@ -160,11 +160,11 @@ function fmtFecha(iso) {
 // ── Upload de imagen a Supabase Storage ──────────────────────────
 async function subirImagen(file) {
   const nombre = Date.now() + '_' + file.name.replace(/\s+/g, '_');
-  const { error } = await supabase.storage
+  const { error } = await sbAdmin.storage
     .from(BUCKET)
     .upload(nombre, file, { cacheControl: '3600', upsert: false });
   if (error) throw error;
-  const { data } = supabase.storage.from(BUCKET).getPublicUrl(nombre);
+  const { data } = sbAdmin.storage.from(BUCKET).getPublicUrl(nombre);
   return data.publicUrl;
 }
 
@@ -193,7 +193,7 @@ function bindEliminar(container, tabla, reloadFn) {
   container.querySelectorAll('.item-del').forEach(btn => {
     btn.addEventListener('click', async () => {
       if (!confirm('¿Eliminar esta publicación? Esta acción no se puede deshacer.')) return;
-      const { error } = await supabase.from(tabla).delete().eq('id', btn.dataset.id);
+      const { error } = await sbAdmin.from(tabla).delete().eq('id', btn.dataset.id);
       if (error) { alert('Error: ' + error.message); return; }
       reloadFn();
     });
@@ -252,7 +252,7 @@ document.getElementById('btn-crear-evento').addEventListener('click', async () =
       imagen_url = await subirImagen(file);
     }
 
-    const { error } = await supabase.from('eventos').insert([{
+    const { error } = await sbAdmin.from('eventos').insert([{
       titulo,
       descripcion: descripcion || null,
       fecha:       fecha       || null,
@@ -284,7 +284,7 @@ document.getElementById('btn-crear-evento').addEventListener('click', async () =
 async function cargarEventos() {
   const list = document.getElementById('lista-eventos');
   list.innerHTML = '<p class="empty-state">Cargando...</p>';
-  const { data, error } = await supabase
+  const { data, error } = await sbAdmin
     .from('eventos').select('*')
     .order('created_at', { ascending: false }).limit(10);
   if (error) { list.innerHTML = '<p class="empty-state">Error al cargar.</p>'; return; }
@@ -317,7 +317,7 @@ document.getElementById('btn-publicar-blog').addEventListener('click', async () 
       imagen_url = await subirImagen(file);
     }
 
-    const { error } = await supabase.from('publicaciones').insert([{
+    const { error } = await sbAdmin.from('publicaciones').insert([{
       titulo, contenido, imagen_url, categoria
     }]);
     if (error) throw error;
@@ -340,7 +340,7 @@ document.getElementById('btn-publicar-blog').addEventListener('click', async () 
 async function cargarBlog() {
   const list = document.getElementById('lista-blog');
   list.innerHTML = '<p class="empty-state">Cargando...</p>';
-  const { data, error } = await supabase
+  const { data, error } = await sbAdmin
     .from('publicaciones').select('*')
     .order('created_at', { ascending: false }).limit(10);
   if (error) { list.innerHTML = '<p class="empty-state">Error al cargar.</p>'; return; }
@@ -363,7 +363,7 @@ document.getElementById('btn-subir-galeria').addEventListener('click', async () 
 
   try {
     const url = await subirImagen(file);
-    const { error } = await supabase.from('imagenes_publicas').insert([{
+    const { error } = await sbAdmin.from('imagenes_publicas').insert([{
       titulo, url, fecha: new Date().toISOString()
     }]);
     if (error) throw error;
@@ -386,7 +386,7 @@ document.getElementById('btn-subir-galeria').addEventListener('click', async () 
 async function cargarGaleria() {
   const list = document.getElementById('lista-galeria');
   list.innerHTML = '<p class="empty-state">Cargando...</p>';
-  const { data, error } = await supabase
+  const { data, error } = await sbAdmin
     .from('imagenes_publicas').select('*')
     .order('fecha', { ascending: false }).limit(12);
   if (error) { list.innerHTML = '<p class="empty-state">Error al cargar.</p>'; return; }
@@ -420,7 +420,7 @@ async function cargarMensajes() {
   const badge = document.getElementById('badge-mensajes');
   list.innerHTML = '<p class="empty-state">Cargando...</p>';
 
-  const { data, error } = await supabase
+  const { data, error } = await sbAdmin
     .from('contactos').select('*')
     .order('created_at', { ascending: false });
 
@@ -457,7 +457,7 @@ async function cargarMensajes() {
     const markBtn = card.querySelector('[data-lid]');
     if (markBtn) {
       markBtn.addEventListener('click', async () => {
-        await supabase.from('contactos').update({ leido: true }).eq('id', msg.id);
+        await sbAdmin.from('contactos').update({ leido: true }).eq('id', msg.id);
         cargarMensajes();
       });
     }
