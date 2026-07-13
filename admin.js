@@ -197,6 +197,101 @@ function bindEliminar(container, tabla, reloadFn) {
   });
 }
 
+// ── Estado de edición ──────────────────────────────────────────────
+let editandoEventoId = null;
+let editandoBlogId = null;
+let editandoGaleriaId = null;
+
+function mostrarBotonCancelar(btnId, cancelFn) {
+  const btn = document.getElementById(btnId);
+  if (!btn) return;
+  removerBotonCancelar(btnId);
+  const cancelBtn = document.createElement('button');
+  cancelBtn.id = 'cancel-' + btnId;
+  cancelBtn.className = 'adm-btn-outline';
+  cancelBtn.style.marginTop = '10px';
+  cancelBtn.style.width = '100%';
+  cancelBtn.textContent = '❌ Cancelar edición';
+  cancelBtn.addEventListener('click', (e) => {
+    e.preventDefault();
+    cancelFn();
+  });
+  btn.parentNode.insertBefore(cancelBtn, btn.nextSibling);
+}
+
+function removerBotonCancelar(btnId) {
+  const cancelBtn = document.getElementById('cancel-' + btnId);
+  if (cancelBtn) cancelBtn.remove();
+}
+
+function prepararEdicionEvento(item) {
+  editandoEventoId = item.id;
+  document.getElementById('ev-titulo').value = item.titulo || '';
+  document.getElementById('ev-descripcion').value = item.descripcion || '';
+  document.getElementById('ev-fecha').value = item.fecha || '';
+  document.getElementById('ev-hora').value = item.hora || '';
+  document.getElementById('ev-tipo').value = item.tipo || 'Evento';
+  document.getElementById('ev-estado').value = item.estado || 'proximo';
+  
+  const preview = document.getElementById('ev-preview');
+  if (item.imagen_url) {
+    preview.src = item.imagen_url;
+    preview.style.display = 'block';
+  } else {
+    preview.style.display = 'none';
+  }
+  
+  const btn = document.getElementById('btn-crear-evento');
+  if (btn) btn.textContent = '💾 Guardar cambios de evento';
+  mostrarBotonCancelar('btn-crear-evento', () => resetearEdicionEvento());
+}
+
+function resetearEdicionEvento() {
+  editandoEventoId = null;
+  document.getElementById('ev-titulo').value = '';
+  document.getElementById('ev-descripcion').value = '';
+  document.getElementById('ev-fecha').value = '';
+  document.getElementById('ev-hora').value = '';
+  document.getElementById('ev-tipo').value = 'Evento';
+  document.getElementById('ev-estado').value = 'proximo';
+  document.getElementById('file-evento').value = '';
+  document.getElementById('ev-preview').style.display = 'none';
+  const btn = document.getElementById('btn-crear-evento');
+  if (btn) btn.textContent = '📅 Publicar evento';
+  removerBotonCancelar('btn-crear-evento');
+}
+
+function prepararEdicionBlog(item) {
+  editandoBlogId = item.id;
+  document.getElementById('blog-titulo').value = item.titulo || '';
+  document.getElementById('blog-contenido').value = item.contenido || '';
+  document.getElementById('blog-categoria').value = item.categoria || 'Noticias';
+  
+  const preview = document.getElementById('blog-preview');
+  if (item.imagen_url) {
+    preview.src = item.imagen_url;
+    preview.style.display = 'block';
+  } else {
+    preview.style.display = 'none';
+  }
+  
+  const btn = document.getElementById('btn-publicar-blog');
+  if (btn) btn.textContent = '💾 Guardar cambios de noticia';
+  mostrarBotonCancelar('btn-publicar-blog', () => resetearEdicionBlog());
+}
+
+function resetearEdicionBlog() {
+  editandoBlogId = null;
+  document.getElementById('blog-titulo').value = '';
+  document.getElementById('blog-contenido').value = '';
+  document.getElementById('blog-categoria').value = 'Noticias';
+  document.getElementById('file-blog').value = '';
+  document.getElementById('blog-preview').style.display = 'none';
+  const btn = document.getElementById('btn-publicar-blog');
+  if (btn) btn.textContent = '📝 Publicar noticia';
+  removerBotonCancelar('btn-publicar-blog');
+}
+
 // ── Renderizar lista genérica ─────────────────────────────────────
 function renderLista(containerId, data, tabla, reloadFn, extraInfo) {
   const list = document.getElementById(containerId);
@@ -217,9 +312,24 @@ function renderLista(containerId, data, tabla, reloadFn, extraInfo) {
         <strong>${esc(item.titulo)}</strong>
         <span>${esc(extraInfo(item))}</span>
       </div>
-      <button class="item-del" data-id="${esc(item.id)}">Eliminar</button>
+      <div style="display:flex;gap:6px;flex-shrink:0;">
+        <button class="item-edit" data-id="${esc(item.id)}">Editar</button>
+        <button class="item-del" data-id="${esc(item.id)}">Eliminar</button>
+      </div>
     `;
     list.appendChild(d);
+
+    // Enlazar botón de edición
+    const editBtn = d.querySelector('.item-edit');
+    if (editBtn) {
+      editBtn.addEventListener('click', () => {
+        if (tabla === 'eventos') {
+          prepararEdicionEvento(item);
+        } else if (tabla === 'publicaciones') {
+          prepararEdicionBlog(item);
+        }
+      });
+    }
   });
   bindEliminar(list, tabla, reloadFn);
 }
@@ -239,17 +349,24 @@ document.getElementById('btn-crear-evento').addEventListener('click', async () =
   if (!titulo) { setStatus('ev-status', '⚠️ El título es obligatorio.', 'err'); return; }
 
   btn.disabled = true;
-  setStatus('ev-status', 'Guardando evento...', 'ld');
+  setStatus('ev-status', editandoEventoId ? 'Guardando cambios del evento...' : 'Guardando evento...', 'ld');
 
   try {
     let imagen_url = null;
+    
+    // Si estamos editando y no se seleccionó una imagen nueva, conservar la actual
+    if (editandoEventoId) {
+      const { data: curr } = await sbAdmin.from('eventos').select('imagen_url').eq('id', editandoEventoId).single();
+      if (curr) imagen_url = curr.imagen_url;
+    }
+
     const file = getEventoFile();
     if (file) {
       setStatus('ev-status', 'Subiendo imagen...', 'ld');
       imagen_url = await subirImagen(file);
     }
 
-    const { error } = await sbAdmin.from('eventos').insert([{
+    const payload = {
       titulo,
       descripcion: descripcion || null,
       fecha:       fecha       || null,
@@ -257,24 +374,33 @@ document.getElementById('btn-crear-evento').addEventListener('click', async () =
       imagen_url,
       tipo,
       estado
-    }]);
-    if (error) throw error;
+    };
 
-    setStatus('ev-status', '✅ Evento publicado. Ya es visible en el sitio público.', 'ok');
-    // Limpiar form
-    ['ev-titulo', 'ev-descripcion', 'ev-fecha', 'ev-hora'].forEach(id => {
-      document.getElementById(id).value = '';
-    });
-    document.getElementById('file-evento').value = '';
-    document.getElementById('ev-preview').style.display = 'none';
+    if (editandoEventoId) {
+      const { error } = await sbAdmin.from('eventos').update(payload).eq('id', editandoEventoId);
+      if (error) throw error;
+      setStatus('ev-status', '✅ Evento actualizado con éxito.', 'ok');
+      resetearEdicionEvento();
+    } else {
+      const { error } = await sbAdmin.from('eventos').insert([payload]);
+      if (error) throw error;
+      setStatus('ev-status', '✅ Evento publicado. Ya es visible en el sitio público.', 'ok');
+      
+      // Limpiar form
+      ['ev-titulo', 'ev-descripcion', 'ev-fecha', 'ev-hora'].forEach(id => {
+        document.getElementById(id).value = '';
+      });
+      document.getElementById('file-evento').value = '';
+      document.getElementById('ev-preview').style.display = 'none';
+    }
     cargarEventos();
 
   } catch (e) {
-    setStatus('ev-status', '❌ Error al publicar: ' + e.message, 'err');
+    setStatus('ev-status', '❌ Error al guardar: ' + e.message, 'err');
     console.error(e);
   } finally {
     btn.disabled     = false;
-    btn.textContent  = '📅 Publicar evento';
+    btn.textContent  = editandoEventoId ? '💾 Guardar cambios de evento' : '📅 Publicar evento';
   }
 });
 
@@ -304,25 +430,43 @@ document.getElementById('btn-publicar-blog').addEventListener('click', async () 
   }
 
   btn.disabled = true;
-  setStatus('blog-status', 'Publicando...', 'ld');
+  setStatus('blog-status', editandoBlogId ? 'Guardando cambios...' : 'Publicando...', 'ld');
 
   try {
     let imagen_url = null;
+    
+    // Si estamos editando y no se seleccionó una imagen nueva, conservar la actual
+    if (editandoBlogId) {
+      const { data: curr } = await sbAdmin.from('publicaciones').select('imagen_url').eq('id', editandoBlogId).single();
+      if (curr) imagen_url = curr.imagen_url;
+    }
+
     const file = getBlogFile();
     if (file) {
       setStatus('blog-status', 'Subiendo imagen...', 'ld');
       imagen_url = await subirImagen(file);
     }
 
-    const { error } = await sbAdmin.from('publicaciones').insert([{
-      titulo, contenido, imagen_url, categoria
-    }]);
-    if (error) throw error;
+    const payload = {
+      titulo,
+      contenido,
+      imagen_url,
+      categoria
+    };
 
-    setStatus('blog-status', '✅ Publicación publicada. Ya es visible en el sitio.', 'ok');
-    ['blog-titulo', 'blog-contenido'].forEach(id => { document.getElementById(id).value = ''; });
-    document.getElementById('file-blog').value = '';
-    document.getElementById('blog-preview').style.display = 'none';
+    if (editandoBlogId) {
+      const { error } = await sbAdmin.from('publicaciones').update(payload).eq('id', editandoBlogId);
+      if (error) throw error;
+      setStatus('blog-status', '✅ Publicación actualizada con éxito.', 'ok');
+      resetearEdicionBlog();
+    } else {
+      const { error } = await sbAdmin.from('publicaciones').insert([payload]);
+      if (error) throw error;
+      setStatus('blog-status', '✅ Publicación publicada. Ya es visible en el sitio.', 'ok');
+      ['blog-titulo', 'blog-contenido'].forEach(id => { document.getElementById(id).value = ''; });
+      document.getElementById('file-blog').value = '';
+      document.getElementById('blog-preview').style.display = 'none';
+    }
     cargarBlog();
 
   } catch (e) {
@@ -330,7 +474,7 @@ document.getElementById('btn-publicar-blog').addEventListener('click', async () 
     console.error(e);
   } finally {
     btn.disabled    = false;
-    btn.textContent = '📝 Publicar noticia';
+    btn.textContent = editandoBlogId ? '💾 Guardar cambios de noticia' : '📝 Publicar noticia';
   }
 });
 
@@ -348,27 +492,84 @@ async function cargarBlog() {
 // ═══════════════════════════════════════════════════════════════
 //  GALERÍA
 // ═══════════════════════════════════════════════════════════════
+function prepararEdicionGaleria(img) {
+  editandoGaleriaId = img.id;
+  document.getElementById('galeria-titulo').value = img.titulo || '';
+  
+  const preview = document.getElementById('galeria-preview');
+  if (img.url) {
+    preview.src = img.url;
+    preview.style.display = 'block';
+  } else {
+    preview.style.display = 'none';
+  }
+  
+  const btn = document.getElementById('btn-subir-galeria');
+  if (btn) btn.textContent = '💾 Guardar cambios de foto';
+  mostrarBotonCancelar('btn-subir-galeria', () => resetearEdicionGaleria());
+}
+
+function resetearEdicionGaleria() {
+  editandoGaleriaId = null;
+  document.getElementById('galeria-titulo').value = '';
+  document.getElementById('file-galeria').value = '';
+  document.getElementById('galeria-preview').style.display = 'none';
+  const btn = document.getElementById('btn-subir-galeria');
+  if (btn) btn.textContent = '📸 Publicar foto';
+  removerBotonCancelar('btn-subir-galeria');
+}
+
 document.getElementById('btn-subir-galeria').addEventListener('click', async () => {
   const titulo = document.getElementById('galeria-titulo').value.trim() || 'Sin título';
   const btn    = document.getElementById('btn-subir-galeria');
   const file   = getGaleriaFile();
 
-  if (!file) { setStatus('galeria-status', '⚠️ Selecciona una foto primero.', 'err'); return; }
+  // Si no se edita y no hay archivo, mostrar error
+  if (!editandoGaleriaId && !file) { 
+    setStatus('galeria-status', '⚠️ Selecciona una foto primero.', 'err'); 
+    return; 
+  }
 
   btn.disabled = true;
-  setStatus('galeria-status', 'Subiendo foto...', 'ld');
+  setStatus('galeria-status', editandoGaleriaId ? 'Guardando cambios...' : 'Subiendo foto...', 'ld');
 
   try {
-    const url = await subirImagen(file);
-    const { error } = await sbAdmin.from('imagenes_publicas').insert([{
-      titulo, url, fecha: new Date().toISOString()
-    }]);
-    if (error) throw error;
+    let url = null;
+    
+    // Si estamos editando y no se seleccionó una imagen nueva, conservar la actual
+    if (editandoGaleriaId) {
+      const { data: curr } = await sbAdmin.from('imagenes_publicas').select('url').eq('id', editandoGaleriaId).single();
+      if (curr) url = curr.url;
+    }
 
-    setStatus('galeria-status', '✅ Foto publicada en la galería del sitio.', 'ok');
-    document.getElementById('file-galeria').value = '';
-    document.getElementById('galeria-titulo').value = '';
-    document.getElementById('galeria-preview').style.display = 'none';
+    if (file) {
+      setStatus('galeria-status', 'Subiendo foto...', 'ld');
+      url = await subirImagen(file);
+    }
+
+    if (!url) {
+      setStatus('galeria-status', '⚠️ Selecciona una foto primero.', 'err');
+      btn.disabled = false;
+      return;
+    }
+
+    const payload = { titulo, url };
+
+    if (editandoGaleriaId) {
+      const { error } = await sbAdmin.from('imagenes_publicas').update(payload).eq('id', editandoGaleriaId);
+      if (error) throw error;
+      setStatus('galeria-status', '✅ Foto actualizada con éxito.', 'ok');
+      resetearEdicionGaleria();
+    } else {
+      const { error } = await sbAdmin.from('imagenes_publicas').insert([{
+        ...payload, fecha: new Date().toISOString()
+      }]);
+      if (error) throw error;
+      setStatus('galeria-status', '✅ Foto publicada en la galería del sitio.', 'ok');
+      document.getElementById('file-galeria').value = '';
+      document.getElementById('galeria-titulo').value = '';
+      document.getElementById('galeria-preview').style.display = 'none';
+    }
     cargarGaleria();
 
   } catch (e) {
@@ -376,7 +577,7 @@ document.getElementById('btn-subir-galeria').addEventListener('click', async () 
     console.error(e);
   } finally {
     btn.disabled    = false;
-    btn.textContent = '📸 Publicar foto';
+    btn.textContent = editandoGaleriaId ? '💾 Guardar cambios de foto' : '📸 Publicar foto';
   }
 });
 
@@ -387,7 +588,7 @@ async function cargarGaleria() {
     .from('imagenes_publicas').select('*')
     .order('fecha', { ascending: false }).limit(12);
   if (error) { list.innerHTML = '<p class="empty-state">Error al cargar.</p>'; return; }
-  // Para galería, el campo URL está en item.url (no imagen_url)
+  
   if (!data || data.length === 0) {
     list.innerHTML = '<p class="empty-state">Sin fotos publicadas aún.</p>';
     return;
@@ -402,9 +603,20 @@ async function cargarGaleria() {
         <strong>${esc(img.titulo)}</strong>
         <span>${fmtFecha(img.fecha)}</span>
       </div>
-      <button class="item-del" data-id="${esc(img.id)}">Eliminar</button>
+      <div style="display:flex;gap:6px;flex-shrink:0;">
+        <button class="item-edit" data-id="${esc(img.id)}">Editar</button>
+        <button class="item-del" data-id="${esc(img.id)}">Eliminar</button>
+      </div>
     `;
     list.appendChild(d);
+
+    // Enlazar botón de edición
+    const editBtn = d.querySelector('.item-edit');
+    if (editBtn) {
+      editBtn.addEventListener('click', () => {
+        prepararEdicionGaleria(img);
+      });
+    }
   });
   bindEliminar(list, 'imagenes_publicas', cargarGaleria);
 }
