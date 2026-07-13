@@ -28,7 +28,8 @@
     .adm-input { padding: 11px 14px; border: 1.5px solid #e2e8f0; border-radius: 8px; font-family: 'Montserrat'; font-size: .88rem; width: 100%; transition: border-color .2s; background: white; }
     .adm-input:focus { outline: none; border-color: var(--azul); box-shadow: 0 0 0 3px rgba(26,60,88,.1); }
     textarea.adm-input { resize: vertical; min-height: 90px; }
-    #login-error { color: #dc2626; font-size: .82rem; text-align: center; margin-top: 8px; min-height: 20px; }
+    #login-error { color: #b91c1c; background: #fef2f2; border: 1.5px solid #f87171; border-radius: 8px; font-size: .86rem; font-weight: 600; text-align: center; padding: 10px 12px; margin-top: 14px; display: none; }
+    #login-error:not(:empty) { display: block; }
 
     /* User bar */
     .user-bar { display: flex; align-items: center; justify-content: space-between; background: #eff6ff; border-radius: 10px; padding: 10px 16px; margin-bottom: 20px; }
@@ -289,6 +290,6 @@
   </main>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="admin.js?v=2"></script>
+  <script src="admin.js?v=3"></script>
 </body>
 </html>
