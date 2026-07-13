@@ -3,13 +3,10 @@
 //  Panel de administración completo con Supabase
 // ════════════════════════════════════════════════════════════════
 
-// ── Configuración de Supabase ────────────────────────────────────
-// Reemplaza con tus credenciales: supabase.com → Project Settings → API
 const SUPABASE_URL      = 'https://gqgwlfncplwcswzsqzdb.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_Z9yDCtWlwJLAcCalc4XkpQ_dBFvSeHb';
 
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-const BUCKET   = 'imagenes-eventos'; // nombre del bucket de Storage
+const BUCKET = 'imagenes-eventos';
 
 // ── Refs DOM ─────────────────────────────────────────────────────
 const loginSection  = document.getElementById('login-section');
@@ -21,53 +18,77 @@ const loginError    = document.getElementById('login-error');
 const btnLogout     = document.getElementById('btn-logout');
 const userDisplay   = document.getElementById('user-email-display');
 
+let supabase = null;
+if (window.supabase && typeof window.supabase.createClient === 'function') {
+  supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+}
+
+function mostrarErrorLogin(mensaje) {
+  if (loginError) {
+    loginError.textContent = mensaje;
+    loginError.style.display = 'block';
+    loginError.style.whiteSpace = 'pre-line';
+    loginError.style.textAlign = 'left';
+  }
+  alert(mensaje);
+}
+
 // ── Autenticación ────────────────────────────────────────────────
 async function verificarSesion() {
-  const { data: { session } } = await supabase.auth.getSession();
-  actualizarUI(session);
+  if (!supabase) return;
+  try {
+    const { data: { session } } = await supabase.auth.getSession();
+    actualizarUI(session);
+  } catch (e) {
+    console.error('Error verificando sesión:', e);
+  }
 }
 
 function actualizarUI(session) {
   if (session) {
-    loginSection.style.display  = 'none';
-    uploadSection.style.display = 'block';
-    if (session.user?.email) userDisplay.textContent = session.user.email;
+    if (loginSection)  loginSection.style.display  = 'none';
+    if (uploadSection) uploadSection.style.display = 'block';
+    if (session.user?.email && userDisplay) userDisplay.textContent = session.user.email;
     cargarEventos();
     cargarBlog();
     cargarGaleria();
     cargarMensajes();
   } else {
-    loginSection.style.display  = 'flex';
-    uploadSection.style.display = 'none';
+    if (loginSection)  loginSection.style.display  = 'flex';
+    if (uploadSection) uploadSection.style.display = 'none';
   }
 }
 
-supabase.auth.onAuthStateChange((_event, session) => {
-  actualizarUI(session);
-});
-
-verificarSesion();
-
-function mostrarErrorLogin(mensaje) {
-  loginError.textContent = mensaje;
-  loginError.style.display = 'block';
-  loginError.style.whiteSpace = 'pre-line';
-  loginError.style.textAlign = 'left';
-  alert(mensaje);
+if (supabase) {
+  supabase.auth.onAuthStateChange((_event, session) => {
+    actualizarUI(session);
+  });
+  verificarSesion();
+} else {
+  mostrarErrorLogin('❌ Error: No se pudo cargar la librería de Supabase desde internet. Verifica tu conexión.');
 }
 
 async function iniciarSesion() {
-  const email = emailInput.value.trim().toLowerCase();
-  const pass  = passInput.value;
+  const email = emailInput?.value.trim().toLowerCase();
+  const pass  = passInput?.value;
   if (!email || !pass) { 
-    mostrarErrorLogin('⚠️ Por favor completa tu correo electrónico y contraseña.');
+    mostrarErrorLogin('⚠️ Por favor escribe tu correo electrónico y tu contraseña.');
     return; 
   }
+
+  if (!supabase) {
+    mostrarErrorLogin('❌ No se ha podido conectar a la librería de Supabase.');
+    return;
+  }
   
-  btnLogin.textContent = 'Verificando credenciales...';
-  btnLogin.disabled    = true;
-  loginError.textContent = '';
-  loginError.style.display = 'none';
+  if (btnLogin) {
+    btnLogin.textContent = 'Verificando credenciales...';
+    btnLogin.disabled    = true;
+  }
+  if (loginError) {
+    loginError.textContent = '';
+    loginError.style.display = 'none';
+  }
   
   try {
     const { data, error } = await supabase.auth.signInWithPassword({ email, password: pass });
@@ -90,14 +111,16 @@ async function iniciarSesion() {
     console.error('Excepción en iniciarSesion:', err);
     mostrarErrorLogin(`❌ Error de conexión al servidor Supabase:\n${err.message || err}`);
   } finally {
-    btnLogin.textContent = 'Iniciar sesión';
-    btnLogin.disabled    = false;
+    if (btnLogin) {
+      btnLogin.textContent = 'Iniciar sesión';
+      btnLogin.disabled    = false;
+    }
   }
 }
 
-btnLogin.addEventListener('click', iniciarSesion);
-emailInput.addEventListener('keydown', e => { if (e.key === 'Enter') iniciarSesion(); });
-passInput.addEventListener('keydown', e => { if (e.key === 'Enter') iniciarSesion(); });
+if (btnLogin) btnLogin.addEventListener('click', iniciarSesion);
+if (emailInput) emailInput.addEventListener('keydown', e => { if (e.key === 'Enter') iniciarSesion(); });
+if (passInput) passInput.addEventListener('keydown', e => { if (e.key === 'Enter') iniciarSesion(); });
 
 btnLogout.addEventListener('click', () => supabase.auth.signOut());
 
