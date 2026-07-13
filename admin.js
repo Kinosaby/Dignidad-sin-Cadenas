@@ -22,7 +22,12 @@ const btnLogout     = document.getElementById('btn-logout');
 const userDisplay   = document.getElementById('user-email-display');
 
 // ── Autenticación ────────────────────────────────────────────────
-supabase.auth.onAuthStateChange((_event, session) => {
+async function verificarSesion() {
+  const { data: { session } } = await supabase.auth.getSession();
+  actualizarUI(session);
+}
+
+function actualizarUI(session) {
   if (session) {
     loginSection.style.display  = 'none';
     uploadSection.style.display = 'block';
@@ -35,20 +40,42 @@ supabase.auth.onAuthStateChange((_event, session) => {
     loginSection.style.display  = 'flex';
     uploadSection.style.display = 'none';
   }
+}
+
+supabase.auth.onAuthStateChange((_event, session) => {
+  actualizarUI(session);
 });
 
-btnLogin.addEventListener('click', async () => {
-  const email = emailInput.value.trim();
+verificarSesion();
+
+async function iniciarSesion() {
+  const email = emailInput.value.trim().toLowerCase();
   const pass  = passInput.value;
   if (!email || !pass) { loginError.textContent = 'Completa ambos campos.'; return; }
+  
   btnLogin.textContent = 'Iniciando...';
   btnLogin.disabled    = true;
   loginError.textContent = '';
+  
   const { error } = await supabase.auth.signInWithPassword({ email, password: pass });
-  if (error) loginError.textContent = 'Correo o contraseña incorrectos.';
+  
+  if (error) {
+    console.error('Error al iniciar sesión:', error);
+    if (error.message.toLowerCase().includes('not confirmed') || error.message.toLowerCase().includes('confirm')) {
+      loginError.textContent = '⚠️ Tu correo no está confirmado en Supabase. Ve a Authentication → Users y actívalo.';
+    } else if (error.message.toLowerCase().includes('invalid login credentials')) {
+      loginError.textContent = 'Correo o contraseña incorrectos.';
+    } else {
+      loginError.textContent = `Error: ${error.message}`;
+    }
+  }
   btnLogin.textContent = 'Iniciar sesión';
   btnLogin.disabled    = false;
-});
+}
+
+btnLogin.addEventListener('click', iniciarSesion);
+emailInput.addEventListener('keydown', e => { if (e.key === 'Enter') iniciarSesion(); });
+passInput.addEventListener('keydown', e => { if (e.key === 'Enter') iniciarSesion(); });
 
 btnLogout.addEventListener('click', () => supabase.auth.signOut());
 
