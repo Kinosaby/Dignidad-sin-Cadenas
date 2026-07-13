@@ -6,7 +6,7 @@
 const SUPABASE_URL      = 'https://gqgwlfncplwcswzsqzdb.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_Z9yDCtWlwJLAcCalc4XkpQ_dBFvSeHb';
 
-const BUCKET = 'imagenes-eventos';
+const BUCKET = 'dignidad-storage';
 
 // ── Refs DOM ─────────────────────────────────────────────────────
 const loginSection  = document.getElementById('login-section');
