@@ -53,6 +53,7 @@ function actualizarUI(session) {
     cargarBlog();
     cargarGaleria();
     cargarMensajes();
+    cargarConfiguracionAdmin();
   } else {
     if (loginSection)  loginSection.style.display  = 'flex';
     if (uploadSection) uploadSection.style.display = 'none';
@@ -464,3 +465,82 @@ async function cargarMensajes() {
     list.appendChild(card);
   });
 }
+
+// ═══════════════════════════════════════════════════════════════
+//  CONFIGURACIÓN GENERAL DEL SITIO
+// ═══════════════════════════════════════════════════════════════
+async function cargarConfiguracionAdmin() {
+  try {
+    const { data, error } = await sbAdmin
+      .from('configuracion')
+      .select('*')
+      .eq('id', 1)
+      .single();
+
+    if (error || !data) {
+      console.warn('No se pudo obtener la configuración de la base de datos.');
+      return;
+    }
+
+    // Llenar inputs con los valores actuales
+    if (document.getElementById('cfg-hero-slogan')) document.getElementById('cfg-hero-slogan').value = data.hero_slogan || '';
+    if (document.getElementById('cfg-hero-titulo')) document.getElementById('cfg-hero-titulo').value = data.hero_titulo || '';
+    if (document.getElementById('cfg-hero-texto'))  document.getElementById('cfg-hero-texto').value  = data.hero_texto  || '';
+
+    if (document.getElementById('cfg-qs-historia')) document.getElementById('cfg-qs-historia').value = data.qs_historia || '';
+    if (document.getElementById('cfg-qs-mision'))   document.getElementById('cfg-qs-mision').value   = data.qs_mision   || '';
+    if (document.getElementById('cfg-qs-vision'))   document.getElementById('cfg-qs-vision').value   = data.qs_vision   || '';
+    if (document.getElementById('cfg-qs-valores'))  document.getElementById('cfg-qs-valores').value  = data.qs_valores  || '';
+
+    if (document.getElementById('cfg-contacto-telefono'))  document.getElementById('cfg-contacto-telefono').value  = data.contacto_telefono  || '';
+    if (document.getElementById('cfg-contacto-correo'))    document.getElementById('cfg-contacto-correo').value    = data.contacto_correo    || '';
+    if (document.getElementById('cfg-contacto-ubicacion')) document.getElementById('cfg-contacto-ubicacion').value = data.contacto_ubicacion || '';
+
+  } catch (err) {
+    console.error('Error al cargar configuración en admin:', err);
+  }
+}
+
+async function guardarConfiguracion() {
+  const btn = document.getElementById('btn-guardar-config');
+  if (!btn) return;
+
+  btn.disabled = true;
+  setStatus('config-status', 'Guardando cambios del sitio...', 'ld');
+
+  const updates = {
+    hero_slogan:        document.getElementById('cfg-hero-slogan')?.value.trim() || null,
+    hero_titulo:        document.getElementById('cfg-hero-titulo')?.value.trim() || null,
+    hero_texto:         document.getElementById('cfg-hero-texto')?.value.trim()  || null,
+    qs_historia:        document.getElementById('cfg-qs-historia')?.value.trim() || null,
+    qs_mision:          document.getElementById('cfg-qs-mision')?.value.trim()   || null,
+    qs_vision:          document.getElementById('cfg-qs-vision')?.value.trim()   || null,
+    qs_valores:         document.getElementById('cfg-qs-valores')?.value.trim()  || null,
+    contacto_telefono:  document.getElementById('cfg-contacto-telefono')?.value.trim()  || null,
+    contacto_correo:    document.getElementById('cfg-contacto-correo')?.value.trim()    || null,
+    contacto_ubicacion: document.getElementById('cfg-contacto-ubicacion')?.value.trim() || null,
+    updated_at:         new Date().toISOString()
+  };
+
+  try {
+    const { error } = await sbAdmin
+      .from('configuracion')
+      .update(updates)
+      .eq('id', 1);
+
+    if (error) throw error;
+    setStatus('config-status', '✅ Cambios generales del sitio guardados con éxito. Se verán reflejados al recargar el sitio público.', 'ok');
+  } catch (err) {
+    console.error('Error al guardar configuración:', err);
+    setStatus('config-status', '❌ Error al guardar los cambios: ' + err.message, 'err');
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+// Enlazar botón de guardado
+const btnGuardarConfig = document.getElementById('btn-guardar-config');
+if (btnGuardarConfig) {
+  btnGuardarConfig.addEventListener('click', guardarConfiguracion);
+}
+

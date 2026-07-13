@@ -47,6 +47,41 @@ CREATE TABLE IF NOT EXISTS public.contactos (
     created_at TIMESTAMPTZ DEFAULT now()
 );
 
+-- 5. TABLA CONFIGURACION (TEXTOS GENERALES Y CONFIGURACIÓN)
+CREATE TABLE IF NOT EXISTS public.configuracion (
+    id INT PRIMARY KEY DEFAULT 1,
+    hero_slogan TEXT,
+    hero_titulo TEXT,
+    hero_texto TEXT,
+    qs_historia TEXT,
+    qs_mision TEXT,
+    qs_vision TEXT,
+    qs_valores TEXT,
+    contacto_telefono TEXT,
+    contacto_correo TEXT,
+    contacto_ubicacion TEXT,
+    created_at TIMESTAMPTZ DEFAULT now(),
+    updated_at TIMESTAMPTZ DEFAULT now(),
+    CONSTRAINT check_single_row CHECK (id = 1)
+);
+
+-- Insertar configuración inicial por defecto si no existe
+INSERT INTO public.configuracion (id, hero_slogan, hero_titulo, hero_texto, qs_historia, qs_mision, qs_vision, qs_valores, contacto_telefono, contacto_correo, contacto_ubicacion)
+VALUES (
+    1,
+    'Donde tu historia sana y tu mente se libera',
+    'Dignidad, transformación y libertad real.',
+    'Acompañamos procesos de reintegración social, salud mental y reconstrucción de proyectos de vida con un enfoque centrado en la persona, la dignidad humana y el crecimiento sostenible.',
+    'Dignidad Sin Cadenas nació de la convicción de que toda persona, sin importar su historia o sus circunstancias, es capaz de transformarse y construir una vida plena.\n\nLa organización surge como respuesta a la necesidad de acompañamiento integral en procesos de reintegración social y salud mental en nuestra comunidad.',
+    'Acompañar a personas en procesos de transformación personal, reintegración social y reconstrucción de su proyecto de vida, desde un enfoque de dignidad humana, respeto y desarrollo integral.',
+    'Ser una organización de referencia en acompañamiento psicosocial y desarrollo humano, reconocida por generar transformaciones sostenibles y promover la reintegración digna en la comunidad.',
+    'Dignidad humana, Respeto e inclusión, Compromiso ético, Esperanza y resiliencia, Transformación sostenible, Confidencialidad',
+    'Pendiente de actualización',
+    'contacto@dignidadsincadenas.org',
+    'Ciudad de México, México'
+)
+ON CONFLICT (id) DO NOTHING;
+
 -- ==============================================================================
 -- ACTIVAR SEGURIDAD RLS EN TODAS LAS TABLAS
 -- ==============================================================================
@@ -54,10 +89,13 @@ ALTER TABLE public.eventos ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.publicaciones ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.imagenes_publicas ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.contactos ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.configuracion ENABLE ROW LEVEL SECURITY;
 
 -- ==============================================================================
 -- ELIMINAR POLÍTICAS ANTIGUAS SI EXISTIERAN PARA EVITAR DUPLICADOS
 -- ==============================================================================
+DROP POLICY IF EXISTS "Lectura publica de configuracion" ON public.configuracion;
+DROP POLICY IF EXISTS "Edicion admin de configuracion" ON public.configuracion;
 DROP POLICY IF EXISTS "Lectura publica de eventos" ON public.eventos;
 DROP POLICY IF EXISTS "Edicion admin eventos" ON public.eventos;
 
@@ -105,6 +143,13 @@ ON public.contactos FOR SELECT TO authenticated USING (true);
 
 CREATE POLICY "Eliminar admin contactos" 
 ON public.contactos FOR DELETE TO authenticated USING (true);
+
+-- CONFIGURACION: Público lee, Admin autenticado edita
+CREATE POLICY "Lectura publica de configuracion" 
+ON public.configuracion FOR SELECT TO anon, authenticated USING (true);
+
+CREATE POLICY "Edicion admin de configuracion" 
+ON public.configuracion FOR ALL TO authenticated USING (true) WITH CHECK (true);
 
 -- ==============================================================================
 -- BUCKET DE ALMACENAMIENTO (STORAGE) PARA IMÁGENES

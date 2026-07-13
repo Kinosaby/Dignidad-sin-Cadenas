@@ -152,6 +152,7 @@
           <button class="adm-tab"    data-tab="tab-mensajes" role="tab">
             📬 Mensajes <span id="badge-mensajes" class="badge" style="display:none"></span>
           </button>
+          <button class="adm-tab"    data-tab="tab-configuracion" role="tab">⚙️ Configuración</button>
         </div>
 
         <!-- ─── TAB: EVENTOS ─────────────────── -->
@@ -284,6 +285,64 @@
           <div id="msg-list" class="msg-list">
             <p class="empty-state">Cargando mensajes...</p>
           </div>
+        </div>
+
+        <!-- ─── TAB: CONFIGURACIÓN ────────────── -->
+        <div class="tab-pane" id="tab-configuracion">
+          <p style="font-size:.84rem;color:#64748b;margin-bottom:16px">Edita los textos generales y la información de contacto de todo el sitio web.</p>
+          
+          <h3 style="font-size:.92rem;color:var(--azul);margin:16px 0 8px;border-bottom:1px solid #e2e8f0;padding-bottom:6px">Sección Hero / Principal</h3>
+          <div class="form-g">
+            <label for="cfg-hero-slogan">Slogan del Hero</label>
+            <input type="text" id="cfg-hero-slogan" class="adm-input" placeholder="Ej. Donde tu historia sana y tu mente se libera">
+          </div>
+          <div class="form-g">
+            <label for="cfg-hero-titulo">Título del Hero (Soporta etiquetas &lt;br/&gt; y &lt;em&gt;)</label>
+            <input type="text" id="cfg-hero-titulo" class="adm-input" placeholder="Ej. Dignidad,&lt;br/&gt;transformación&lt;br/&gt;y &lt;em&gt;libertad&lt;/em&gt; real.">
+          </div>
+          <div class="form-g">
+            <label for="cfg-hero-texto">Texto descriptivo del Hero</label>
+            <textarea id="cfg-hero-texto" class="adm-input" placeholder="Describe brevemente la propuesta del Hero..."></textarea>
+          </div>
+
+          <h3 style="font-size:.92rem;color:var(--azul);margin:24px 0 8px;border-bottom:1px solid #e2e8f0;padding-bottom:6px">Quiénes Somos</h3>
+          <div class="form-g">
+            <label for="cfg-qs-historia">Nuestra Historia (Usa doble salto de línea para separar en párrafos)</label>
+            <textarea id="cfg-qs-historia" class="adm-input" rows="8" placeholder="Escribe la historia de la organización..."></textarea>
+          </div>
+          <div class="row-2">
+            <div class="form-g">
+              <label for="cfg-qs-mision">Misión</label>
+              <textarea id="cfg-qs-mision" class="adm-input" rows="4" placeholder="Misión de la organización..."></textarea>
+            </div>
+            <div class="form-g">
+              <label for="cfg-qs-vision">Visión</label>
+              <textarea id="cfg-qs-vision" class="adm-input" rows="4" placeholder="Visión de la organización..."></textarea>
+            </div>
+          </div>
+          <div class="form-g">
+            <label for="cfg-qs-valores">Valores (Separados por coma)</label>
+            <input type="text" id="cfg-qs-valores" class="adm-input" placeholder="Ej. Dignidad humana, Respeto, Inclusión, Resiliencia">
+          </div>
+
+          <h3 style="font-size:.92rem;color:var(--azul);margin:24px 0 8px;border-bottom:1px solid #e2e8f0;padding-bottom:6px">Información de Contacto</h3>
+          <div class="row-2">
+            <div class="form-g">
+              <label for="cfg-contacto-telefono">Teléfono</label>
+              <input type="text" id="cfg-contacto-telefono" class="adm-input" placeholder="Ej. +52 55 1234 5678">
+            </div>
+            <div class="form-g">
+              <label for="cfg-contacto-correo">Correo electrónico</label>
+              <input type="email" id="cfg-contacto-correo" class="adm-input" placeholder="Ej. contacto@dignidadsincadenas.org">
+            </div>
+          </div>
+          <div class="form-g">
+            <label for="cfg-contacto-ubicacion">Ubicación / Dirección</label>
+            <input type="text" id="cfg-contacto-ubicacion" class="adm-input" placeholder="Ej. Ciudad de México, México">
+          </div>
+
+          <button id="btn-guardar-config" class="adm-btn" style="margin-top:20px">⚙️ Guardar cambios del sitio</button>
+          <div id="config-status" class="st-msg"></div>
         </div>
 
       </div><!-- /upload-section -->

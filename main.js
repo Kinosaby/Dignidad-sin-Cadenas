@@ -218,6 +218,7 @@ if (cbPriv) {
 //  Se activa solo cuando las credenciales están configuradas
 // ════════════════════════════════════════════════════════════════
 if (sb && SUPABASE_URL !== 'TU_SUPABASE_URL') {
+  cargarConfiguracion();
   cargarEventosDinamicos();
   cargarPublicaciones();
   cargarGaleria();
@@ -391,3 +392,68 @@ async function cargarGaleria() {
   });
   reObservar(grid);
 }
+
+// ════════════════════════════════════════════════════════════════
+//  CONFIGURACIÓN GENERAL DINÁMICA
+// ════════════════════════════════════════════════════════════════
+async function cargarConfiguracion() {
+  const { data, error } = await sb
+    .from('configuracion')
+    .select('*')
+    .eq('id', 1)
+    .single();
+
+  if (error || !data) return; // Mantiene los fallbacks estáticos en caso de error
+
+  // Hero Section
+  const heroSlogan = document.getElementById('dyn-hero-slogan');
+  const heroTitulo = document.getElementById('dyn-hero-titulo');
+  const heroTexto  = document.getElementById('dyn-hero-texto');
+  if (heroSlogan && data.hero_slogan) heroSlogan.textContent = data.hero_slogan;
+  if (heroTitulo && data.hero_titulo) heroTitulo.innerHTML   = data.hero_titulo;
+  if (heroTexto  && data.hero_texto)  heroTexto.textContent  = data.hero_texto;
+
+  // Quiénes Somos
+  const qsHistoria = document.getElementById('dyn-qs-historia');
+  if (qsHistoria && data.qs_historia) {
+    const paragraphs = data.qs_historia.split('\n\n');
+    qsHistoria.innerHTML = `
+      <span class="etiqueta">Quiénes somos</span>
+      <h2 class="titulo-seccion">Nuestra historia</h2>
+      <span class="linea-dorada"></span>
+      ${paragraphs.map(p => `<p>${esc(p)}</p>`).join('')}
+    `;
+  }
+  const qsMision = document.getElementById('dyn-qs-mision');
+  const qsVision = document.getElementById('dyn-qs-vision');
+  if (qsMision && data.qs_mision) qsMision.textContent = data.qs_mision;
+  if (qsVision && data.qs_vision) qsVision.textContent = data.qs_vision;
+
+  const qsValores = document.getElementById('dyn-qs-valores');
+  if (qsValores && data.qs_valores) {
+    const vals = data.qs_valores.split(',').map(v => v.trim()).filter(Boolean);
+    qsValores.innerHTML = vals.map(v => `<li>${esc(v)}</li>`).join('');
+  }
+
+  // Secciones de Contacto y Footer
+  const telSpans = [document.getElementById('dyn-contacto-telefono'), document.getElementById('dyn-footer-telefono')];
+  const mailSpans = [document.getElementById('dyn-contacto-correo'), document.getElementById('dyn-footer-correo')];
+  const ubiSpans = [document.getElementById('dyn-contacto-ubicacion'), document.getElementById('dyn-footer-ubicacion')];
+
+  telSpans.forEach(el => {
+    if (el && data.contacto_telefono) {
+      el.textContent = el.id.includes('footer') ? 'Teléfono: ' + data.contacto_telefono : data.contacto_telefono;
+    }
+  });
+  mailSpans.forEach(el => {
+    if (el && data.contacto_correo) {
+      el.textContent = el.id.includes('footer') ? 'Correo: ' + data.contacto_correo : data.contacto_correo;
+    }
+  });
+  ubiSpans.forEach(el => {
+    if (el && data.contacto_ubicacion) {
+      el.textContent = el.id.includes('footer') ? 'Ubicación: ' + data.contacto_ubicacion : data.contacto_ubicacion;
+    }
+  });
+}
+
