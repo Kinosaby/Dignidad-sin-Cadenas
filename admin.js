@@ -48,17 +48,26 @@ supabase.auth.onAuthStateChange((_event, session) => {
 
 verificarSesion();
 
+function mostrarErrorLogin(mensaje) {
+  loginError.textContent = mensaje;
+  loginError.style.display = 'block';
+  loginError.style.whiteSpace = 'pre-line';
+  loginError.style.textAlign = 'left';
+  alert(mensaje);
+}
+
 async function iniciarSesion() {
   const email = emailInput.value.trim().toLowerCase();
   const pass  = passInput.value;
   if (!email || !pass) { 
-    loginError.textContent = 'Completa ambos campos.'; 
+    mostrarErrorLogin('⚠️ Por favor completa tu correo electrónico y contraseña.');
     return; 
   }
   
-  btnLogin.textContent = 'Iniciando...';
+  btnLogin.textContent = 'Verificando credenciales...';
   btnLogin.disabled    = true;
   loginError.textContent = '';
+  loginError.style.display = 'none';
   
   try {
     const { data, error } = await supabase.auth.signInWithPassword({ email, password: pass });
@@ -67,20 +76,19 @@ async function iniciarSesion() {
       console.error('Error al iniciar sesión:', error);
       let mensaje = '❌ Correo o contraseña incorrectos en Supabase.';
       if (error.message.toLowerCase().includes('not confirmed')) {
-        mensaje = '⚠️ Tu correo no está confirmado en Supabase. Ve a Supabase → Authentication → Users → ... → Confirm User.';
+        mensaje = '⚠️ TU USUARIO NO ESTÁ CONFIRMADO EN SUPABASE\n\n1. Entra a Supabase.com → Authentication → Users.\n2. Haz clic en los tres puntos "..." al lado de tu correo.\n3. Selecciona "Confirm User".';
       } else if (error.message.toLowerCase().includes('invalid login credentials')) {
-        mensaje = '❌ Contraseña o correo incorrectos en Supabase.\n\n👉 Para solucionarlo en 10 segundos:\nEntra a Supabase → Authentication → Users → haz clic en "..." al lado de tu correo → selecciona "Reset Password" y escribe tu contraseña.';
+        mensaje = '❌ CONTRASEÑA O CORREO INCORRECTOS EN SUPABASE\n\nSupabase rechazó la contraseña que escribiste.\n\n👉 Para arreglarlo en 15 segundos:\n1. Entra a Supabase.com → Authentication → Users.\n2. Haz clic en los tres puntos "..." a la derecha de raulcarrasco448@gmail.com\n3. Selecciona "Reset Password" y escribe tu nueva contraseña.';
       } else {
-        mensaje = `❌ Error: ${error.message}`;
+        mensaje = `❌ Error de Supabase: ${error.message}`;
       }
-      loginError.textContent = mensaje;
-      alert(mensaje);
+      mostrarErrorLogin(mensaje);
     } else if (data && data.session) {
       actualizarUI(data.session);
     }
   } catch (err) {
     console.error('Excepción en iniciarSesion:', err);
-    loginError.textContent = '❌ Error de red al conectar con Supabase.';
+    mostrarErrorLogin(`❌ Error de conexión al servidor Supabase:\n${err.message || err}`);
   } finally {
     btnLogin.textContent = 'Iniciar sesión';
     btnLogin.disabled    = false;
